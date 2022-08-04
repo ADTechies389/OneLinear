@@ -1,0 +1,7 @@
+#################### WELCOME AD TECHIES ########################
+
+# To Get the list of GPOs inheritance on the given OU. 
+
+
+(Get-GPInheritance -Target "ou=myou,dc=contoso,dc=com").InheritedGpoLinks | foreach-object { Get-GPO -Name ($_.DisplayName)} | Select-Object DisplayName, GpoStatus | Export-Csv c:\temp\TOU-GPOInheritance.csv
+
