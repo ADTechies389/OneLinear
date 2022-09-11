@@ -1,7 +1,14 @@
 #################### WELCOME AD TECHIES ########################
 
 # To Get the list of GPOs inheritance on the given OU. 
-
+# Author: Rama
 
 (Get-GPInheritance -Target "ou=myou,dc=contoso,dc=com").InheritedGpoLinks | foreach-object { Get-GPO -Name ($_.DisplayName)} | Select-Object DisplayName, GpoStatus | Export-Csv c:\temp\TOU-GPOInheritance.csv
 
+---------------------------------------------------------------------------------------------------------
+#Used above command to export active certificate 
+# Author: Bala
+
+certutil -view -restrict "Certificate Expiration Date >= 09/09/2822" -out "RequestID, RequesterName, CommonName, CertificateTemplate, Certificate Effective Date, Certificate Expiration Date" csv > C:\temp\ActiveCA1certs1.csv
+
+---------------------------------------------------------------------------------------------------------
