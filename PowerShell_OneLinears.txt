@@ -12,3 +12,165 @@
 certutil -view -restrict "Certificate Expiration Date >= 09/09/2822" -out "RequestID, RequesterName, CommonName, CertificateTemplate, Certificate Effective Date, Certificate Expiration Date" csv > C:\temp\ActiveCA1certs1.csv
 
 ---------------------------------------------------------------------------------------------------------
+
+# Active Directory Common Ports Used:
+
+53	DNS
+88	Kerberos
+123	SNTP
+135	RPC Endpoint Mapper
+137	NetBIOS
+138	NetBIOS
+139	NetBIOS
+389	LDAP
+445	SMB
+464	Kerberos Change Password
+636	LDAP (SSL)
+3268	Global Catalog
+3269	Global Catalog (SSL)
+5722	DFS-R (SYSVOL)
+5985	WinRM
+9389	ADWS (AD Powershell)
+123 - NTP port 
+
+---------------------------------------------------------------------------------------------------------
+
+# User deleted Event: 4726 capture from Local DC 
+
+Get-WinEvent -FilterHashtable @{Logname='Security';ID='4726'} -ErrorAction SilentlyContinue|`
+
+    Select-Object -Property Timecreated,
+    @{label='Deleted-accountName';Expression={$_.properties[0].value}},
+    @{label='DomainName';Expression={$_.properties[1].value}},
+    @{label='Deleted-By';Expression={$_.properties[4].value}},machinename
+
+---------------------------------------------------------------------------------------------------------
+
+# While building automation scripts below email parameters are useful to us for sending mail using smtp relay 
+
+
+$mailParams = @{
+    SmtpServer                 = 'smtp.server.here'
+    Port                       = 25
+    #UseSSL = $true   
+    From                       = 'sender@yourdomain.com'
+    To                         = 'recipient@yourdomain.com', 'recipient@NotYourDomain.com'
+    Subject                    = ('ON-PREM SMTP Relay - ' + (Get-Date -Format g))
+    Body                       = 'This is a test email using ON-PREM SMTP Relay'
+    DeliveryNotificationOption = 'OnFailure', 'OnSuccess'
+}
+<# Send the message #>
+Send-MailMessage @mailParams
+
+---------------------------------------------------------------------------------------------------------
+
+# While working on Migration project ( Tenant to Tenant ) Below cmd is useful to clear the credentials from Local
+# Machine 
+
+cmdkey /list | ForEach-Object{if($_ -like "*Microsoft_OC1*"){cmdkey /del:($_ -replace " ","" -replace "Target:","")}}
+
+---------------------------------------------------------------------------------------------------------
+
+# How to idenfity the latest update happen to the forest functional level ?
+
+
+Get-ADObject "cn=partitions,cn=configuration,dc=test,dc=local" -pr *
+
+repadmin /showobjmeta localhost "cn=partitions,cn=configuration,dc=test,dc=local"
+
+msDS-Behavior-Version - check when the update is happended
+
+---------------------------------------------------------------------------------------------------------
+
+# How to identify the latest update happen to the domain functional level ? 
+
+Get-ADObject "dc=test,dc=local" -pr *
+Run for each domain
+repadmin /showobjmeta localhost "dc=test,dc=local"
+
+https://support.microsoft.com/en-us/help/322692/how-to-raise-active-directory-domain-and-forest-functional-levels
+
+---------------------------------------------------------------------------------------------------------
+
+# How to validate the schema version of the forest ?
+
+repadmin /showobjmeta localhost "cn=schema,cn=configuration,dc=test,dc=local"
+ 
+---------------------------------------------------------------------------------------------------------
+
+# Domain controllers list in forest ( It includes all child domains as well )
+
+
+(Get-ADForest).Domains | %{ Get-ADDomainController -Filter * -Server $_ } | select HostName,Domain,IPv4Address,OperatingSystem,Site | ft -autosize
+
+---------------------------------------------------------------------------------------------------------
+
+# You can use the following PowerShell command to identify users with SID History data in each domain:
+ 
+Get-ADGroup -Filter 'sidhistory -like "*"' | FT DistinguishedName
+
+---------------------------------------------------------------------------------------------------------
+
+# Get report based on the operating system
+
+Get-ADcomputer -Filter {(operatingsystem -like "*xp*") -or (operatingsystem -like "*vista*") -or (operatingsystem -like "*Windows NT*")-or (operatingsystem -like "*2000*") -or (operatingsystem -like "*2003*")} -Property Name,OperatingSystem,OperatingSystemServicePack,lastlogontimestamp | Format-Table Name,OperatingSystem,OperatingSystemServicePack,@{name="lastlogontimestamp"; expression={[datetime]::fromfiletime($_.lastlogontimestamp)}} -Wrap -AutoSize
+
+---------------------------------------------------------------------------------------------------------
+
+###########################################
+##### Created on 29/11/2021
+##### Created by Prabuyuvaraj
+###########################################
+
+ 
+
+############################
+##### GPO Backup#####
+############################
+$date = get-date -format M.d.yyyy
+$GPONames = Get-Content -Path C:\Automation\Serv.txt
+New-Item -Path "C:\Automation\GPoBackup\backup" -ItemType directory
+New-Item -Path "C:\Automation\GPoBackup\backup\html" -ItemType directory
+foreach ($gponame in $GPONames)
+{
+Backup-GPO -Name $gponame -Path "C:\Automation\GPoBackup\backup"
+Get-GPOReport -Name $gponame -ReportType html | Out-File C:\Automation\GPoBackup\backup\html\$gponame.html
+}
+
+ 
+---------------------------------------------------------------------------------------------------------
+##### Remove of GPO #####
+
+$GPONames = Get-Content -Path C:\Automation\Serv.txt
+
+foreach ($policy in $GPONames)
+{
+Remove-GPO -Name $policy | Export-Csv -Path C:\Automation\removal.txt
+}
+
+##### New GPO Creation as existing name #####
+
+---------------------------------------------------------------------------------------------------------
+
+$GPONames = Get-Content -Path C:\Automation\Serv.txt
+
+foreach ($newgpo in $GPONames)
+{
+New-GPO -Name $newgpo
+}
+---------------------------------------------------------------------------------------------------------
+########### GPO Restore #####
+
+$GPONames = Get-Content -Path C:\Automation\Serv.txt
+
+
+foreach ($gpo in $GPONames)
+{
+Restore-GPO -Name $gpo -Path "C:\Automation\GPoBackup\backup"
+}
+
+---------------------------------------------------------------------------------------------------------
+ 
+
+ 
+
