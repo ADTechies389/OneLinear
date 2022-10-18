@@ -64,6 +64,16 @@ Send-MailMessage @mailParams
 
 ---------------------------------------------------------------------------------------------------------
 
+Another One Linear cmdlet 
+
+Example how to send email using send-mailmessage
+
+Send-MailMessage -To 'mnatarajan24@csc.com' -SmtpServer 'smtp.net.sas.dk' -From 'cphmdc10@sas.com' -Subject 'Test_Email' -Body 'This is fo
+r testing the smtp relay to send AD healthcheck reports'
+
+
+---------------------------------------------------------------------------------------------------------
+
 # While working on Migration project ( Tenant to Tenant ) Below cmd is useful to clear the credentials from Local
 # Machine 
 
@@ -171,6 +181,27 @@ Restore-GPO -Name $gpo -Path "C:\Automation\GPoBackup\backup"
 
 ---------------------------------------------------------------------------------------------------------
  
+Disable the Inboud and Outbound replication to DC
 
- 
+repadmin /options mydc01.domain.com +DISABLE_OUTBOUND_REPL +DISABLE_INBOUND_REPL
 
+This command disable the inbound and outbound replication for mydc01 domain controller. 
+
+We use this command in scenario like Schema extension or some major environmental change , so that if any issue, we can 
+simply rebuild that particular DC instead of doing the forest recovery 
+
+Some Notes about it, 
+---------------------
+Disable inboud or outbound replication to particular DCs
+
+ Repadmin /options <dcname> <+/-> <DISABLE_INBOUND_REPL/DISABLE_OUTBOUND_REPL
+
+---------------------------------------------------------------------------------------------------------
+
+Get Deleted objects from Container
+
+Get-ADObject -IncludeDeletedObjects -SearchBase "cn=deleted objects,dc=test,dc=local" -Filter "objectclass -eq 'computer' "
+
+Get-ADObject -IncludeDeletedObjects -SearchBase "cn=deleted objects,dc=haemo,dc=net" -Filter "objectclass -eq 'User' "
+
+----------------------------------------------------------------------------------------------------------
